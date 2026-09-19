@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.vite/
+*.local
+
+# Legacy/reference exports are kept locally but are not active application code.
+waste/

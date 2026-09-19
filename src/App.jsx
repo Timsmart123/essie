@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
+import { Navigate, useLocation, useNavigate } from "react-router-dom"
 import ecLogo from "./imports/Essie_chops.png"
+import { businessConfig } from "./config/businessConfig"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const WHATSAPP =
-  "https://wa.me/447700000000?text=Hello%20Essie%20Chops!%20I%27d%20like%20to%20place%20an%20order"
-const PHONE = "tel:+447700000000"
+const WHATSAPP = businessConfig.whatsappUrl
+const PHONE = businessConfig.phoneHref
 
 const IMGS = {
   hero: "https://images.unsplash.com/photo-1762918988304-97d4a5840a4a?w=1600&h=900&fit=crop&auto=format",
@@ -38,14 +39,20 @@ const IMGS = {
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 
-function BtnPrimary({ children, href = WHATSAPP, onClick, className = "" }) {
+function BtnPrimary({ children, href = WHATSAPP, onClick, type, className = "" }) {
   const cls = `inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-white font-semibold text-sm tracking-wide transition-all duration-200 hover:scale-[1.03] hover:shadow-lg active:scale-[0.98] ${className}`
   const style = { backgroundColor: "#C75D3A" }
-  if (onClick)
+  if (onClick || type)
     return (
-      <button onClick={onClick} className={cls} style={style}>
+      <button type={type ?? "button"} onClick={onClick} className={cls} style={style}>
         {children}
       </button>
+    )
+  if (!href)
+    return (
+      <span className={`${cls} cursor-not-allowed opacity-60`} style={style} aria-disabled="true">
+        {children}
+      </span>
     )
   return (
     <a
@@ -181,7 +188,7 @@ function Nav({ current, onNav }) {
             onClick={() => go("home")}
             className="flex items-center gap-3 z-10"
           >
-            <img src={ecLogo} alt="Essie Chops" className="h-12 w-auto" />
+            <img src={ecLogo} alt={businessConfig.name} className="h-12 w-auto" />
           </button>
 
           {/* Desktop links */}
@@ -258,7 +265,7 @@ function Nav({ current, onNav }) {
         <div className="flex flex-col items-center flex-1 gap-8 px-8 nav-spacer">
           {" "}
           {/* changed gap-2 to gap-10, px-6 to px-8, removed justify-center,py-12 */}
-          <img src={ecLogo} alt="Essie Chops" className="h-16 mb-8 nav-img" />
+          <img src={ecLogo} alt={businessConfig.name} className="h-16 mb-8 nav-img" />
           {links.map((l) => (
             <button
               key={l.page}
@@ -303,7 +310,7 @@ function Footer({ onNav }) {
     >
       <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-12">
         <div className="md:col-span-1">
-          <img src={ecLogo} alt="Essie Chops" className="h-14 mb-7 " />
+          <img src={ecLogo} alt={businessConfig.name} className="h-14 mb-7 " />
           <p
             className="text-sm leading-relaxed mb-6"
             style={{ color: "#D4A853", opacity: 0.8 }}
@@ -311,18 +318,22 @@ function Footer({ onNav }) {
             Handcrafted Nigerian celebration food for life's most meaningful
             moments.
           </p>
-          <div className="flex gap-4">
-            {["Instagram", "Facebook", "TikTok"].map((s) => (
+          {Object.entries(businessConfig.socials).some(([, url]) => url) && (
+            <div className="flex gap-4">
+            {Object.entries(businessConfig.socials).filter(([, url]) => url).map(([name, url]) => (
               <a
-                key={s}
-                href="#"
+                key={name}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs font-medium hover:opacity-70 transition-opacity"
                 style={{ color: "#D4A853" }}
               >
-                {s}
+                {name}
               </a>
             ))}
-          </div>
+            </div>
+          )}
         </div>
 
         <div>
@@ -383,16 +394,16 @@ function Footer({ onNav }) {
             style={{ color: "#F6F1E9", opacity: 0.8 }}
           >
             <p className="flex items-center gap-2">
-              <MapPinIcon /> London, United Kingdom
+              <MapPinIcon /> {businessConfig.location}
             </p>
             <p className="flex items-center gap-2">
-              <PhoneIcon /> +44 (0)7700 000000
+              <PhoneIcon /> {businessConfig.phoneDisplay}
             </p>
             <p className="flex items-center gap-2">
-              <MailIcon /> hello@essiechops.co.uk
+              <MailIcon /> {businessConfig.email}
             </p>
             <p className="flex items-center gap-2">
-              <ClockIcon /> Mon–Sat: 9am–7pm
+              <ClockIcon /> {businessConfig.openingHours}
             </p>
           </div>
           <a
@@ -414,7 +425,7 @@ function Footer({ onNav }) {
           color: "rgba(246,241,233,0.4)",
         }}
       >
-        © 2025 Essie Chops. All rights reserved. Pastries, Cakes & Party
+        Copyright 2025 {businessConfig.name}. All rights reserved. Pastries, Cakes & Party
         Platters.
       </div>
     </footer>
@@ -820,7 +831,7 @@ function HomePage({ onNav }) {
     {
       icon: "uk",
       title: "Reliable UK Service",
-      desc: "Based in London, serving across the UK with care, punctuality, and pride.",
+      desc: `Based in ${businessConfig.city}, serving across the ${businessConfig.countryShort} with care, punctuality, and pride.`,
     },
   ]
 
@@ -856,14 +867,14 @@ function HomePage({ onNav }) {
       name: "Adaeze O.",
       occasion: "Birthday Party",
       review:
-        "Essie Chops made my 30th birthday unforgettable. The cake was a showstopper and the puff puff had my guests begging for the recipe!",
+        `${businessConfig.name} made my 30th birthday unforgettable. The cake was a showstopper and the puff puff had my guests begging for the recipe!`,
       stars: 5,
     },
     {
       name: "Sarah M.",
       occasion: "Corporate Event",
       review:
-        "We used Essie Chops for our company's Diversity Day and the feedback was incredible. Professional, punctual, and absolutely delicious.",
+        `We used ${businessConfig.name} for our company's Diversity Day and the feedback was incredible. Professional, punctual, and absolutely delicious.`,
       stars: 5,
     },
     {
@@ -882,7 +893,7 @@ function HomePage({ onNav }) {
     },
     {
       q: "Do you deliver across the UK?",
-      a: "We are based in London and currently deliver within Greater London. For orders outside London, please contact us to discuss arrangements.",
+      a: `We are based in ${businessConfig.city} and currently deliver within ${businessConfig.deliveryAreas}. For orders outside the listed delivery area, please contact us to discuss arrangements.`,
     },
     {
       q: "Can I customise the flavour and design of my cake?",
@@ -952,7 +963,7 @@ function HomePage({ onNav }) {
                 Taste Better
               </em>
               <br />
-              with Essie Chops
+              with {businessConfig.name}
             </h1>
             <p className="text-base md:text-lg text-white/80 mb-10 leading-relaxed max-w-md">
               Handcrafted Nigerian pastries, celebration cakes, and authentic
@@ -1062,7 +1073,7 @@ function HomePage({ onNav }) {
               className="text-xs font-semibold tracking-[0.2em] uppercase mb-3"
               style={{ color: "#D4A853" }}
             >
-              Why Essie Chops
+              Why {businessConfig.name}
             </p>
             <h2
               className="text-4xl md:text-5xl font-semibold text-white"
@@ -1188,7 +1199,7 @@ function HomePage({ onNav }) {
             <div className="rounded-2xl overflow-hidden aspect-[4/5]">
               <Img
                 src={IMGS.founder}
-                alt="Essie Chops founder"
+                alt={`${businessConfig.name} founder`}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -1224,7 +1235,7 @@ function HomePage({ onNav }) {
               className="text-base leading-relaxed mb-4"
               style={{ color: "#5C3D2E" }}
             >
-              Essie Chops was born from a simple belief: that food is the heart
+              {businessConfig.name} was born from a simple belief: that food is the heart
               of every celebration. Rooted in the rich culinary traditions of
               Nigeria, we bring authentic flavours and handcrafted quality to
               tables across the UK.
@@ -1745,7 +1756,7 @@ function CelebrationsPage() {
             </em>
           </h1>
           <p className="text-base" style={{ color: "#8B7A6F" }}>
-            Whether it's a birthday, wedding, or corporate event, Essie Chops
+            Whether it's a birthday, wedding, or corporate event, {businessConfig.name}
             brings authentic Nigerian hospitality to your celebration.
           </p>
         </div>
@@ -1928,22 +1939,22 @@ function AboutPage() {
     {
       year: "2018",
       event: "The Beginning",
-      desc: "Essie started baking from her home kitchen in London, gifting friends and family with her beloved Nigerian pastries.",
+      desc: `Essie started baking from her home kitchen in ${businessConfig.city}, gifting friends and family with her beloved Nigerian pastries.`,
     },
     {
       year: "2020",
       event: "Growing Demand",
-      desc: "Word spread quickly. Essie formalised Essie Chops as a business, taking orders from across London.",
+      desc: `Word spread quickly. Essie formalised ${businessConfig.name} as a business, taking orders from across ${businessConfig.city}.`,
     },
     {
       year: "2022",
       event: "Expanding Services",
-      desc: "Celebration cakes, platters, and catering were added. Essie Chops became the go-to for Nigerian celebration food in London.",
+      desc: `Celebration cakes, platters, and catering were added. ${businessConfig.name} became the go-to for Nigerian celebration food in ${businessConfig.city}.`,
     },
     {
       year: "2024",
       event: "Today",
-      desc: "Serving hundreds of families across the UK, Essie Chops continues to grow — one unforgettable celebration at a time.",
+      desc: `Serving hundreds of families across the ${businessConfig.countryShort}, ${businessConfig.name} continues to grow - one unforgettable celebration at a time.`,
     },
   ]
 
@@ -1979,7 +1990,7 @@ function AboutPage() {
               className="text-base leading-relaxed mb-4"
               style={{ color: "#5C3D2E" }}
             >
-              Essie Chops was founded by Esther — a passionate baker whose love
+              {businessConfig.name} was founded by Esther - a passionate baker whose love
               for Nigerian food and celebration runs as deep as her roots.
               Growing up in a household where food was the language of love,
               Esther learned to cook authentic Nigerian recipes at her mother's
@@ -1997,10 +2008,8 @@ function AboutPage() {
               className="text-base leading-relaxed mb-8"
               style={{ color: "#8B7A6F" }}
             >
-              Today, Essie Chops serves families, businesses, and communities
-              across the UK — creating food that doesn't just taste incredible,
-              but carries the spirit of celebration itself.
-            </p>
+              Today, {businessConfig.name} serves families, businesses, and communities
+              across the {businessConfig.countryShort} - creating food that doesn't just taste incredible,</p>
             <div className="flex gap-4">
               <div className="text-center">
                 <p
@@ -2053,7 +2062,7 @@ function AboutPage() {
             <div className="rounded-2xl overflow-hidden aspect-[4/5]">
               <Img
                 src={IMGS.founder}
-                alt="Esther, founder of Essie Chops"
+                alt={`Esther, founder of ${businessConfig.name}`}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -2095,7 +2104,7 @@ function AboutPage() {
             }}
           >
             "To bring the warmth of Nigerian hospitality and the joy of
-            authentic food to every celebration across the United Kingdom."
+            authentic food to every celebration across the {businessConfig.country}."
           </blockquote>
         </div>
       </section>
@@ -2198,7 +2207,7 @@ function AboutPage() {
               >
                 <Img
                   src={img}
-                  alt="Essie Chops behind the scenes"
+                  alt={`${businessConfig.name} behind the scenes`}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 />
               </div>
@@ -2415,11 +2424,11 @@ function ContactPage() {
                   color: "#3A241B",
                 }}
               >
-                Enquiry Received!
+                Your enquiry has not been sent yet
               </h3>
               <p className="text-sm" style={{ color: "#8B7A6F" }}>
-                We'll be in touch within 24 hours. For a faster response,
-                message us on WhatsApp.
+                This form is a prototype until a real form service is connected.
+                Please use a verified contact method once one is available.
               </p>
               <div className="mt-6">
                 <BtnPrimary>
@@ -2432,12 +2441,14 @@ function ContactPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
+                    htmlFor="contact-name"
                     className="block text-xs font-medium mb-2"
                     style={{ color: "#5C3D2E" }}
                   >
                     Full Name *
                   </label>
                   <input
+                    id="contact-name"
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -2448,12 +2459,14 @@ function ContactPage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="contact-email"
                     className="block text-xs font-medium mb-2"
                     style={{ color: "#5C3D2E" }}
                   >
                     Email Address *
                   </label>
                   <input
+                    id="contact-email"
                     required
                     type="email"
                     value={form.email}
@@ -2470,12 +2483,14 @@ function ContactPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
+                    htmlFor="contact-phone"
                     className="block text-xs font-medium mb-2"
                     style={{ color: "#5C3D2E" }}
                   >
                     Phone Number
                   </label>
                   <input
+                    id="contact-phone"
                     type="tel"
                     value={form.phone}
                     onChange={(e) =>
@@ -2488,12 +2503,14 @@ function ContactPage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="contact-occasion"
                     className="block text-xs font-medium mb-2"
                     style={{ color: "#5C3D2E" }}
                   >
                     Occasion
                   </label>
                   <select
+                    id="contact-occasion"
                     value={form.occasion}
                     onChange={(e) =>
                       setForm({ ...form, occasion: e.target.value })
@@ -2511,12 +2528,14 @@ function ContactPage() {
 
               <div>
                 <label
+                  htmlFor="contact-date"
                   className="block text-xs font-medium mb-2"
                   style={{ color: "#5C3D2E" }}
                 >
                   Preferred Date
                 </label>
                 <input
+                  id="contact-date"
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -2527,12 +2546,14 @@ function ContactPage() {
 
               <div>
                 <label
+                  htmlFor="contact-message"
                   className="block text-xs font-medium mb-2"
                   style={{ color: "#5C3D2E" }}
                 >
                   Your Message *
                 </label>
                 <textarea
+                  id="contact-message"
                   required
                   rows={4}
                   value={form.message}
@@ -2545,7 +2566,7 @@ function ContactPage() {
                 />
               </div>
 
-              <BtnPrimary className="w-full justify-center">
+              <BtnPrimary type="submit" className="w-full justify-center">
                 Send Enquiry →
               </BtnPrimary>
             </form>
@@ -2579,7 +2600,7 @@ function ContactPage() {
               <div>
                 <p className="font-semibold text-white text-sm">WhatsApp Us</p>
                 <p className="text-white/80 text-xs">
-                  +44 (0)7700 000000 — We typically reply within 1 hour
+                  {businessConfig.phoneDisplay} - {businessConfig.typicalResponseTime}
                 </p>
               </div>
             </a>
@@ -2600,7 +2621,7 @@ function ContactPage() {
                   className="text-xs"
                   style={{ color: "rgba(246,241,233,0.6)" }}
                 >
-                  +44 (0)7700 000000
+                  {businessConfig.phoneDisplay}
                 </p>
               </div>
             </a>
@@ -2624,22 +2645,22 @@ function ContactPage() {
                 {
                   icon: "email",
                   label: "Email",
-                  val: "hello@essiechops.co.uk",
+                  val: businessConfig.email,
                 },
                 {
                   icon: "location",
                   label: "Based in",
-                  val: "London, United Kingdom",
+                  val: businessConfig.location,
                 },
                 {
                   icon: "delivery",
                   label: "Delivery Areas",
-                  val: "Greater London (nationwide on request)",
+                  val: businessConfig.deliveryAreas,
                 },
                 {
                   icon: "hours",
                   label: "Business Hours",
-                  val: "Monday–Saturday, 9am–7pm",
+                  val: businessConfig.openingHours,
                 },
               ].map((d) => (
                 <div key={d.label} className="flex gap-3">
@@ -2668,7 +2689,7 @@ function ContactPage() {
                 <IconMark name="location" />
               </div>
               <p className="text-sm font-medium" style={{ color: "#3A241B" }}>
-                London, United Kingdom
+                {businessConfig.location}
               </p>
               <p className="text-xs mt-1" style={{ color: "#8B7A6F" }}>
                 Map coming soon
@@ -2684,11 +2705,23 @@ function ContactPage() {
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [page, setPage] = useState("home")
+  const location = useLocation()
+  const navigateTo = useNavigate()
+  const pagePaths = {
+    home: "/",
+    menu: "/menu",
+    celebrations: "/celebrations",
+    about: "/about",
+    gallery: "/gallery",
+    contact: "/contact",
+  }
+  const page = Object.entries(pagePaths).find(([, path]) => path === location.pathname)?.[0]
 
   const navigate = (p) => {
-    setPage(p)
+    navigateTo(pagePaths[p])
   }
+
+  if (!page) return <Navigate to="/" replace />
 
   return (
     <div
